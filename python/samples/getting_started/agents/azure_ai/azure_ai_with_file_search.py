@@ -2,12 +2,13 @@
 
 import asyncio
 from pathlib import Path
-
+from dotenv import load_dotenv
 from agent_framework import ChatAgent, HostedFileSearchTool, HostedVectorStoreContent
 from agent_framework_azure_ai import AzureAIAgentClient
 from azure.ai.agents.models import FileInfo, VectorStore
 from azure.identity.aio import AzureCliCredential
 
+load_dotenv()
 """
 The following sample demonstrates how to create a simple, Azure AI agent that
 uses a file search tool to answer user questions.

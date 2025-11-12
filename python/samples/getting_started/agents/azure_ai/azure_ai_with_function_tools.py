@@ -1,13 +1,16 @@
 # Copyright (c) Microsoft. All rights reserved.
+from dotenv import load_dotenv
+load_dotenv()
 
 import asyncio
+import os
 from datetime import datetime, timezone
 from random import randint
 from typing import Annotated
 
 from agent_framework import ChatAgent
 from agent_framework.azure import AzureAIAgentClient
-from azure.identity.aio import AzureCliCredential
+from azure.identity.aio import DefaultAzureCredential
 from pydantic import Field
 
 """
@@ -38,10 +41,9 @@ async def tools_on_agent_level() -> None:
 
     # Tools are provided when creating the agent
     # The agent can use these tools for any query during its lifetime
-    # For authentication, run `az login` command in terminal or replace AzureCliCredential with preferred
-    # authentication option.
+    # Using DefaultAzureCredential (falls back to Azure CLI)
     async with (
-        AzureCliCredential() as credential,
+        DefaultAzureCredential() as credential,
         ChatAgent(
             chat_client=AzureAIAgentClient(async_credential=credential),
             instructions="You are a helpful assistant that can provide weather and time information.",
@@ -72,10 +74,9 @@ async def tools_on_run_level() -> None:
     print("=== Tools Passed to Run Method ===")
 
     # Agent created without tools
-    # For authentication, run `az login` command in terminal or replace AzureCliCredential with preferred
-    # authentication option.
+    # Using DefaultAzureCredential (falls back to Azure CLI)
     async with (
-        AzureCliCredential() as credential,
+        DefaultAzureCredential() as credential,
         ChatAgent(
             chat_client=AzureAIAgentClient(async_credential=credential),
             instructions="You are a helpful assistant.",
@@ -106,10 +107,9 @@ async def mixed_tools_example() -> None:
     print("=== Mixed Tools Example (Agent + Run Method) ===")
 
     # Agent created with some base tools
-    # For authentication, run `az login` command in terminal or replace AzureCliCredential with preferred
-    # authentication option.
+    # Using DefaultAzureCredential (falls back to Azure CLI)
     async with (
-        AzureCliCredential() as credential,
+        DefaultAzureCredential() as credential,
         ChatAgent(
             chat_client=AzureAIAgentClient(async_credential=credential),
             instructions="You are a comprehensive assistant that can help with various information requests.",

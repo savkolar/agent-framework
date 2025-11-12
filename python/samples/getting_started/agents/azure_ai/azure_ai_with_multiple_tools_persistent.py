@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft. All rights reserved.
 
 import asyncio
+import os
 from datetime import datetime, timezone
 from typing import Any
 from dotenv import load_dotenv
@@ -13,13 +14,15 @@ from agent_framework import (
     HostedWebSearchTool,
 )
 from agent_framework.azure import AzureAIAgentClient
-from azure.identity.aio import AzureCliCredential
+from azure.ai.projects.aio import AIProjectClient
+from azure.identity.aio import DefaultAzureCredential
 
 """
-Azure AI Agent with Multiple Tools Example
+Azure AI Agent with Multiple Tools Example (Persistent Version)
 
 This sample demonstrates integrating multiple tools (MCP and Web Search) with Azure AI Agents,
 including user approval workflows for function call security.
+This version creates PERSISTENT agents that will be visible in Azure AI Foundry portal.
 
 Prerequisites:
 1. Set AZURE_AI_PROJECT_ENDPOINT and AZURE_AI_MODEL_DEPLOYMENT_NAME environment variables
@@ -66,35 +69,55 @@ async def handle_approvals_with_thread(query: str, agent: "AgentProtocol", threa
 
 
 async def main() -> None:
-    """Example showing Hosted MCP tools for a Azure AI Agent."""
+    """Example showing multiple tools for Azure AI Agent with persistent agent creation."""
+    project_endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
+    model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
+
     async with (
-        AzureCliCredential() as credential,
-        AzureAIAgentClient(async_credential=credential) as chat_client,
+        DefaultAzureCredential() as credential,
+        AIProjectClient(endpoint=project_endpoint, credential=credential) as project_client,
     ):
-        agent = chat_client.create_agent(
-            name="DocsAgent",
+        # Create a persistent agent in Azure AI Foundry
+        print("Creating persistent agent in Azure AI Foundry...")
+        azure_ai_agent = await project_client.agents.create_agent(
+            model=model_deployment,
+            name="DocsAgent-MultiTools",
             instructions="You are a helpful assistant that can help with microsoft documentation questions.",
-            tools=[
-                HostedMCPTool(
-                    name="Microsoft Learn MCP",
-                    url="https://learn.microsoft.com/api/mcp",
-                ),
-                HostedWebSearchTool(count=5),
-                get_time,
-            ],
         )
-        thread = agent.get_new_thread()
-        # First query
-        query1 = "How to create an Azure storage account using az cli and what time is it?"
-        print(f"User: {query1}")
-        result1 = await handle_approvals_with_thread(query1, agent, thread)
-        print(f"{agent.name}: {result1}\n")
-        print("\n=======================================\n")
-        # Second query
-        query2 = "What is Microsoft Agent Framework and use a web search to see what is Reddit saying about it?"
-        print(f"User: {query2}")
-        result2 = await handle_approvals_with_thread(query2, agent, thread)
-        print(f"{agent.name}: {result2}\n")
+        print(f"✓ Agent created with ID: {azure_ai_agent.id}\n")
+
+        try:
+            agent = AzureAIAgentClient(
+                project_client=project_client,
+                agent_id=azure_ai_agent.id,
+                async_credential=credential
+            ).create_agent(
+                name="DocsAgent",
+                instructions="You are a helpful assistant that can help with microsoft documentation questions.",
+                tools=[
+                    HostedMCPTool(
+                        name="Microsoft Learn MCP",
+                        url="https://learn.microsoft.com/api/mcp",
+                    ),
+                    HostedWebSearchTool(count=5),
+                    get_time,
+                ],
+            )
+            thread = agent.get_new_thread()
+            # First query
+            query1 = "How to create an Azure storage account using az cli and what time is it?"
+            print(f"User: {query1}")
+            result1 = await handle_approvals_with_thread(query1, agent, thread)
+            print(f"{agent.name}: {result1}\n")
+            print("\n=======================================\n")
+            # Second query
+            query2 = "What is Microsoft Agent Framework and use a web search to see what is Reddit saying about it?"
+            print(f"User: {query2}")
+            result2 = await handle_approvals_with_thread(query2, agent, thread)
+            print(f"{agent.name}: {result2}\n")
+        finally:
+            # Keep agent alive in Azure AI Foundry
+            print(f"✓ Agent '{azure_ai_agent.name}' (ID: {azure_ai_agent.id}) will remain in Azure AI Foundry\n")
 
 
 if __name__ == "__main__":

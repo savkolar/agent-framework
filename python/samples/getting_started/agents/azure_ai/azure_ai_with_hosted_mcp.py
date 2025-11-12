@@ -2,11 +2,11 @@
 
 import asyncio
 from typing import Any
-
+from dotenv import load_dotenv
 from agent_framework import AgentProtocol, AgentThread, HostedMCPTool
 from agent_framework.azure import AzureAIAgentClient
 from azure.identity.aio import AzureCliCredential
-
+load_dotenv()
 """
 Azure AI Agent with Hosted MCP Example
 

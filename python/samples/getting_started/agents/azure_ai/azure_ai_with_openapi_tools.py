@@ -4,6 +4,10 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from agent_framework import ChatAgent
 from agent_framework_azure_ai import AzureAIAgentClient

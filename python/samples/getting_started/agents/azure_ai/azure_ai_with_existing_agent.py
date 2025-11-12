@@ -52,7 +52,7 @@ async def main() -> None:
                 print(f"Agent: {result}\n")
         finally:
             # Clean up the agent manually
-            await project_client.agents.delete_agent(azure_ai_agent.id)
+            # await project_client.agents.delete_agent(azure_ai_agent.id)
 
 
 if __name__ == "__main__":
